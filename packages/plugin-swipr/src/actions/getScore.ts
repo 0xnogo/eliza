@@ -1,14 +1,15 @@
 import {
-    Action,
-    ActionExample,
+    type Action,
+    type ActionExample,
     composeContext,
     elizaLogger,
     generateObject,
-    HandlerCallback,
-    IAgentRuntime,
-    Memory,
+    generateText,
+    type HandlerCallback,
+    type IAgentRuntime,
+    type Memory,
     ModelClass,
-    State,
+    type State,
 } from "@elizaos/core";
 import axios from "axios";
 import { z } from "zod";
@@ -66,6 +67,37 @@ const GetScoreSchema = z.object({
     token_address: z.string(),
 });
 
+function composeResponseContext(scoreData: unknown, state: State): string {
+    const scoreResponseTemplate = `
+    You are a crypto analyst providing concise token score updates. The scores are rated out of 6.
+
+    Here is the score data for the token:
+    ${JSON.stringify(scoreData, null, 2)}
+
+    Previous messages for context:
+    {{recentMessages}}
+
+    Generate a concise, data-focused response in the style of crypto Twitter. Include:
+    1. Token symbol with $ prefix
+    2. Key metrics with actual numbers
+    3. Brief technical context or trend
+    4. Optional second line for additional context if significant
+
+    Example response for good scores:
+    "$TOKEN metrics solid: 5.2/6 overall score. 24h vol $16.5M, 122k holders\n\ndev-locked supply + 92% holder retention while others bleeding. fundamentals intact"
+
+    Example response for poor scores:
+    "$TOKEN metrics concerning: 2.1/6 score. vol down 65%, holders -12k\n\nweak distribution pattern + low social engagement. exercise caution"
+
+    Based on the score data above, generate an appropriate response:`;
+
+    const context = composeContext({
+        state,
+        template: scoreResponseTemplate,
+    });
+
+    return context;
+}
 export const getScoreAction: Action = {
     name: "GET_SCORE",
     similes: ["SCORE", "RATING", "TOKEN_SCORE", "TOKEN_RANK"],
@@ -79,7 +111,7 @@ export const getScoreAction: Action = {
         _message: Memory,
         _state: State,
         _options: any,
-        _callback: HandlerCallback
+        _callback: HandlerCallback,
     ) => {
         elizaLogger.log("Starting Swipr GET_SCORE handler...");
 
@@ -114,7 +146,7 @@ export const getScoreAction: Action = {
                 headers: {
                     accept: "application/json",
                 },
-            }
+            },
         );
         console.log(response.data);
 
@@ -122,35 +154,30 @@ export const getScoreAction: Action = {
             throw new Error("No data received from Swipr API");
         }
 
-        const formattedResponse = response.data.scores.map((score) => {
+        const scoreData = response.data.scores.map((score) => {
             const date = new Date(score.updatedAt).toLocaleDateString();
-            const grades = score.grades;
-
-            return `
-Date: ${date}
-Overall Score: ${score.value} - ${score.title}
-
-Detailed Grades:
-• Volume: ${grades.volume}/5
-• Little Holders: ${grades.littleHolders}/5
-• Medium Holders: ${grades.mediumHolders}/5
-• Social: ${grades.social}/5
-• Supply Audit: ${grades.supplyAudit}/5
-`;
+            return {
+                date,
+                overall: score.value,
+                title: score.title,
+                grades: score.grades,
+            };
         });
 
-        if (formattedResponse.length === 0) {
-            throw new Error(
-                "Failed to format score data for the specified token"
-            );
-        }
+        const context = composeResponseContext(scoreData, _state);
 
-        const responseText = formattedResponse.join("\n-------------------\n");
-        elizaLogger.success("Score data retrieved successfully!");
+        const resultReponse = await generateText({
+            runtime: _runtime,
+            context,
+            modelClass: ModelClass.LARGE,
+        });
+
+        elizaLogger.success("Score data analyzed successfully!");
 
         if (_callback) {
             _callback({
-                text: responseText,
+                text: resultReponse,
+                content: result,
             });
         }
         return response;
@@ -173,7 +200,7 @@ Detailed Grades:
             {
                 user: "{{agent}}",
                 content: {
-                    text: "Here are the scores for the token:\n\nLiquidity Score: {{dynamic}}\nVolume Score: {{dynamic}}\nOverall Score: {{dynamic}}",
+                    text: "The token is showing strong performance with an overall score of {{dynamic}}/6. The volume metrics are healthy at {{dynamic}}/6, indicating good trading activity. The holder distribution looks balanced with small holders at {{dynamic}}/6 and medium holders at {{dynamic}}/6. Social engagement is active at {{dynamic}}/6, and the supply audit score of {{dynamic}}/6 suggests solid tokenomics fundamentals. Over the past few days, the token has maintained consistent performance with a slight upward trend in trading volume.",
                 },
             },
         ],
@@ -194,7 +221,7 @@ Detailed Grades:
             {
                 user: "{{agent}}",
                 content: {
-                    text: "Token Score Analysis:\n\nSafety Rating: {{dynamic}}\nTrading Activity: {{dynamic}}\nMarket Depth: {{dynamic}}\nComposite Score: {{dynamic}}",
+                    text: "The analysis shows some concerning metrics for this token. The overall score is {{dynamic}}/6, which is below average. Trading volume is particularly weak at {{dynamic}}/6, and the holder distribution raises some red flags with small holders at {{dynamic}}/6 and medium holders at {{dynamic}}/6. Social engagement is limited at {{dynamic}}/6, while the supply audit score of {{dynamic}}/6 indicates potential issues with tokenomics. The trend over the past few days shows declining volume metrics, suggesting caution is warranted.",
                 },
             },
         ],
