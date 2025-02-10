@@ -158,8 +158,5 @@
         "TRUSTLESS",
         "IMMUTABLE",
         "AUTONOMOUS"
-    ],
-    "templates": {
-        "messageHandlerTemplate": "Write a small message to the user. Keep it short and concise. Use the following format: {{user1}}: {{user2}}"
-    }
+    ]
 }
