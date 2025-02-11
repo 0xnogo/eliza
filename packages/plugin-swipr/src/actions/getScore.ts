@@ -59,6 +59,9 @@ interface ScoreResponse {
             social: number;
             supplyAudit: number;
         };
+        info: {
+            marketCap: number;
+        };
         updatedAt: string;
     }[];
 }
@@ -67,37 +70,34 @@ const GetScoreSchema = z.object({
     token_address: z.string(),
 });
 
-function composeResponseContext(scoreData: unknown, state: State): string {
-    const scoreResponseTemplate = `
-    You are a crypto analyst providing concise token score updates. The scores are rated out of 6.
+const scoreResponseTemplate = `
+You are a crypto analyst providing concise token score updates. The scores are rated out of 6.
 
-    Here is the score data for the token:
-    ${JSON.stringify(scoreData, null, 2)}
+Here is the score data for the token:
+{{score}}
 
-    Previous messages for context:
-    {{recentMessages}}
+Previous messages for context:
+{{recentMessages}}
 
-    Generate a concise, data-focused response in the style of crypto Twitter. Include:
-    1. Token symbol with $ prefix
-    2. Key metrics with actual numbers
-    3. Brief technical context or trend
-    4. Optional second line for additional context if significant
+Generate a concise, data-focused response in the style of crypto Twitter. Include:
+1. Write 1-2 short sentences about the token(s) performance
+2. Feel free to mention the scores in your response and the grades to justify your statements
+3. If comparing two tokens, highlight interesting contrasts
+4. Keep the tone professional but engaging
+5. Don't use hashtags
+6. Don't ask questions
+7. Use the token ticker with a $ symbol. Example: $SOL
+8. Expect the token ticker with can be in CAPITAL LETTERS, the rest should be in lowercase
 
-    Example response for good scores:
-    "$TOKEN metrics solid: 5.2/6 overall score. 24h vol $16.5M, 122k holders\n\ndev-locked supply + 92% holder retention while others bleeding. fundamentals intact"
+Example response for good scores:
+"$TOKEN metrics solid: 5.2/6 overall score. 24h vol $16.5M, 122k holders\n\ndev-locked supply + 92% holder retention while others bleeding. fundamentals intact"
 
-    Example response for poor scores:
-    "$TOKEN metrics concerning: 2.1/6 score. vol down 65%, holders -12k\n\nweak distribution pattern + low social engagement. exercise caution"
+Example response for poor scores:
+"$TOKEN metrics concerning: 2.1/6 score. vol down 65%, holders -12k\n\nweak distribution pattern + low social engagement. exercise caution"
 
-    Based on the score data above, generate an appropriate response:`;
+Write a concise tweet from a market analyst perspective. Focus on performance, trust, or market position.
+Your response should not contain any questions. Brief, concise statements only. The total character count MUST be less than {{maxTweetLength}}. No emojis. Use \\n\\n (double spaces) between statements if there are multiple statements in your response.`;
 
-    const context = composeContext({
-        state,
-        template: scoreResponseTemplate,
-    });
-
-    return context;
-}
 export const getScoreAction: Action = {
     name: "GET_SCORE",
     similes: ["SCORE", "RATING", "TOKEN_SCORE", "TOKEN_RANK"],
@@ -154,17 +154,29 @@ export const getScoreAction: Action = {
             throw new Error("No data received from Swipr API");
         }
 
-        const scoreData = response.data.scores.map((score) => {
-            const date = new Date(score.updatedAt).toLocaleDateString();
-            return {
-                date,
-                overall: score.value,
-                title: score.title,
-                grades: score.grades,
-            };
+        const scoreData = response.data.scores
+            .map(
+                (score) =>
+                    `Score from ${new Date(score.updatedAt).toLocaleDateString()}:\n` +
+                    `Score: ${score.value}/100 (${score.title})\n` +
+                    `Market Cap: $${score.info.marketCap.toLocaleString()}\n` +
+                    `Grades (/6):\n` +
+                    `Volume: ${score.grades.volume}/6\n` +
+                    `Little Holders: ${score.grades.littleHolders}/6\n` +
+                    `Medium Holders: ${score.grades.mediumHolders}/6\n` +
+                    `Social: ${score.grades.social}/6\n` +
+                    `Supply Audit: ${score.grades.supplyAudit}/6`,
+            )
+            .join("\n\n");
+
+        const state = await _runtime.composeState(_message, {
+            score: scoreData,
         });
 
-        const context = composeResponseContext(scoreData, _state);
+        const context = composeContext({
+            state: state,
+            template: scoreResponseTemplate,
+        });
 
         const resultReponse = await generateText({
             runtime: _runtime,
