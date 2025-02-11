@@ -13,6 +13,7 @@ import {
 } from "@elizaos/core";
 import axios from "axios";
 import { z } from "zod";
+import { TokenData } from "../types/token";
 
 const getScoreTemplate = `
 Extract the following parameters for cryptocurrency price data:
@@ -58,9 +59,6 @@ interface ScoreResponse {
             mediumHolders: number;
             social: number;
             supplyAudit: number;
-        };
-        info: {
-            marketCap: number;
         };
         updatedAt: string;
     }[];
@@ -140,7 +138,7 @@ export const getScoreAction: Action = {
 
         const baseUrl = "https://swipr-api-prod-8d24016ec292.herokuapp.com";
 
-        const response = await axios.get<ScoreResponse>(
+        const responseHistory = await axios.get<ScoreResponse>(
             `${baseUrl}/tokens/${tokenAddress}/history`,
             {
                 headers: {
@@ -148,18 +146,25 @@ export const getScoreAction: Action = {
                 },
             },
         );
-        console.log(response.data);
 
-        if (!response.data) {
+        const responseCurrent = await axios.get<TokenData>(
+            `${baseUrl}/tokens/${tokenAddress}`,
+            {
+                headers: {
+                    accept: "application/json",
+                },
+            },
+        );
+
+        if (!responseHistory.data) {
             throw new Error("No data received from Swipr API");
         }
 
-        const scoreData = response.data.scores
+        const historyData = responseHistory.data.scores
             .map(
                 (score) =>
-                    `Score from ${new Date(score.updatedAt).toLocaleDateString()}:\n` +
+                    `History Score from ${new Date(score.updatedAt).toLocaleDateString()}:\n` +
                     `Score: ${score.value}/100 (${score.title})\n` +
-                    `Market Cap: $${score.info.marketCap.toLocaleString()}\n` +
                     `Grades (/6):\n` +
                     `Volume: ${score.grades.volume}/6\n` +
                     `Little Holders: ${score.grades.littleHolders}/6\n` +
@@ -168,6 +173,13 @@ export const getScoreAction: Action = {
                     `Supply Audit: ${score.grades.supplyAudit}/6`,
             )
             .join("\n\n");
+
+        const currentData =
+            `Current data:\n` +
+            `Market Cap: $${responseCurrent.data.info.marketCap.toLocaleString()}\n` +
+            `24h Change: ${responseCurrent.data.info.h24Change}%\n`;
+
+        let scoreData = currentData + "\n\n" + historyData;
 
         const state = await _runtime.composeState(_message, {
             score: scoreData,
