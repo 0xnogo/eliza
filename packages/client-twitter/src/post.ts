@@ -555,8 +555,6 @@ export class TwitterPostClient {
                 state,
                 template: swiprPostTemplate,
             });
-
-            console.log("Tweet context: " + context);
             elizaLogger.debug("generate post prompt:\n" + context);
 
             const newTweetContent = await generateText({

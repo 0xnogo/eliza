@@ -42,7 +42,6 @@ import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
 import { normalizeCharacter } from "@elizaos/plugin-di";
 import createGoatPlugin from "@elizaos/plugin-goat";
 // import { intifacePlugin } from "@elizaos/plugin-intiface";
-import { dexScreenerPlugin } from "@elizaos/plugin-dexscreener";
 import { createNodePlugin } from "@elizaos/plugin-node";
 import { OpacityAdapter } from "@elizaos/plugin-opacity";
 import { swiprPlugin } from "@elizaos/plugin-swipr";
@@ -840,7 +839,7 @@ export async function createAgent(
             bootstrapPlugin,
             nodePlugin,
             swiprPlugin,
-            dexScreenerPlugin,
+            // dexScreenerPlugin,
         ].filter(Boolean),
         providers: [],
         actions: [],

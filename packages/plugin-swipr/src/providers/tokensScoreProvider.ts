@@ -42,12 +42,12 @@ export class TokensScoreProvider implements Provider {
     }
 
     private formatTokenScores(tokens: TokenData[]): string {
-        // Sort tokens by score and get top 5
-        const topTokens = tokens
-            .sort((a, b) => b.score.value - a.score.value)
+        // Randomly shuffle tokens and take first 5
+        const shuffledTokens = tokens
+            .sort(() => Math.random() - 0.5)
             .slice(0, 5);
 
-        return topTokens
+        return shuffledTokens
             .map(
                 (token) =>
                     `${token.info.name} (${token.info.symbol}):\n` +
