@@ -6,25 +6,25 @@ RUN npm install -g pnpm@9.4.0 && \
     apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y \
-        git \
-        python3 \
-        python3-pip \
-        curl \
-        node-gyp \
-        ffmpeg \
-        libtool-bin \
-        autoconf \
-        automake \
-        libopus-dev \
-        make \
-        g++ \
-        build-essential \
-        libcairo2-dev \
-        libjpeg-dev \
-        libpango1.0-dev \
-        libgif-dev \
-        openssl \
-        libssl-dev && \
+    git \
+    python3 \
+    python3-pip \
+    curl \
+    node-gyp \
+    ffmpeg \
+    libtool-bin \
+    autoconf \
+    automake \
+    libopus-dev \
+    make \
+    g++ \
+    build-essential \
+    libcairo2-dev \
+    libjpeg-dev \
+    libpango1.0-dev \
+    libgif-dev \
+    openssl \
+    libssl-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -50,9 +50,9 @@ FROM node:23.3.0-slim
 RUN npm install -g pnpm@9.4.0 && \
     apt-get update && \
     apt-get install -y \
-        git \
-        python3 \
-        ffmpeg && \
+    git \
+    python3 \
+    ffmpeg && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -76,4 +76,4 @@ COPY --from=builder /app/characters ./characters
 EXPOSE 3000 5173
 
 # Command to start the application
-CMD ["sh", "-c", "pnpm start --characters=\"./characters/phil.character.json\" & pnpm start:client"]
+CMD ["sh", "-c", "pnpm start", "--characters=\"./characters/phil.character.json\" & pnpm start:client"]
