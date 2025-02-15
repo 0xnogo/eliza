@@ -1,5 +1,6 @@
 # Use a specific Node.js version for better reproducibility
-FROM node:20-slim AS builder
+FROM node:23.3.0-slim AS builder
+
 # Install pnpm globally and necessary build tools
 RUN npm install -g pnpm@9.4.0 && \
     apt-get update && \
@@ -38,13 +39,12 @@ COPY . .
 
 # Install dependencies
 RUN pnpm install --no-frozen-lockfile
-RUN npm rebuild @anush008/tokenizers --build-from-source
 
 # Build the project
 RUN pnpm run build && pnpm prune --prod
 
 # Final runtime image
-FROM node:20-slim
+FROM node:23.3.0-slim
 
 # Install runtime dependencies
 RUN npm install -g pnpm@9.4.0 && \
