@@ -1,14 +1,14 @@
 import {
+    ActionTimelineType,
     type Content,
     type IAgentRuntime,
     type IImageDescriptionService,
     type Memory,
     type State,
     type UUID,
-    getEmbeddingZeroVector,
     elizaLogger,
+    getEmbeddingZeroVector,
     stringToUuid,
-    ActionTimelineType,
 } from "@elizaos/core";
 import {
     type QueryTweetsResponse,
@@ -108,7 +108,7 @@ export class ClientBase extends EventEmitter {
 
     async getCachedTweet(tweetId: string): Promise<Tweet | undefined> {
         const cached = await this.runtime.cacheManager.get<Tweet>(
-            `twitter/tweets/${tweetId}`
+            `twitter/tweets/${tweetId}`,
         );
 
         return cached;
@@ -122,7 +122,7 @@ export class ClientBase extends EventEmitter {
         }
 
         const tweet = await this.requestQueue.add(() =>
-            this.twitterClient.getTweet(tweetId)
+            this.twitterClient.getTweet(tweetId),
         );
 
         await this.cacheTweet(tweet);
@@ -133,7 +133,7 @@ export class ClientBase extends EventEmitter {
 
     onReady() {
         throw new Error(
-            "Not implemented in base class, please call from subclass"
+            "Not implemented in base class, please call from subclass",
         );
     }
 
@@ -186,7 +186,7 @@ export class ClientBase extends EventEmitter {
                         username,
                         password,
                         email,
-                        twitter2faSecret
+                        twitter2faSecret,
                     );
                     if (await this.twitterClient.isLoggedIn()) {
                         // fresh login, store new cookies
@@ -194,7 +194,7 @@ export class ClientBase extends EventEmitter {
                         elizaLogger.info("Caching cookies");
                         await this.cacheCookies(
                             username,
-                            await this.twitterClient.getCookies()
+                            await this.twitterClient.getCookies(),
                         );
                         break;
                     }
@@ -205,12 +205,12 @@ export class ClientBase extends EventEmitter {
 
             retries--;
             elizaLogger.error(
-                `Failed to login to Twitter. Retrying... (${retries} attempts left)`
+                `Failed to login to Twitter. Retrying... (${retries} attempts left)`,
             );
 
             if (retries === 0) {
                 elizaLogger.error(
-                    "Max retries reached. Exiting login process."
+                    "Max retries reached. Exiting login process.",
                 );
                 throw new Error("Twitter login failed after maximum retries.");
             }
@@ -224,7 +224,7 @@ export class ClientBase extends EventEmitter {
             elizaLogger.log("Twitter user ID:", this.profile.id);
             elizaLogger.log(
                 "Twitter loaded:",
-                JSON.stringify(this.profile, null, 10)
+                JSON.stringify(this.profile, null, 10),
             );
             // Store profile info for use in responses
             this.runtime.character.twitterProfile = {
@@ -246,7 +246,7 @@ export class ClientBase extends EventEmitter {
         elizaLogger.debug("fetching own posts");
         const homeTimeline = await this.twitterClient.getUserTweets(
             this.profile.id,
-            count
+            count,
         );
         return homeTimeline.tweets;
     }
@@ -256,7 +256,7 @@ export class ClientBase extends EventEmitter {
      */
     async fetchHomeTimeline(
         count: number,
-        following?: boolean
+        following?: boolean,
     ): Promise<Tweet[]> {
         elizaLogger.debug("fetching home timeline");
         const homeTimeline = following
@@ -307,7 +307,7 @@ export class ClientBase extends EventEmitter {
                     videos:
                         tweet.videos ??
                         tweet.legacy?.entities.media?.filter(
-                            (media) => media.type === "video"
+                            (media) => media.type === "video",
                         ) ??
                         [],
                 };
@@ -354,7 +354,7 @@ export class ClientBase extends EventEmitter {
                 urls: tweet.legacy?.entities?.urls || [],
                 videos:
                     tweet.legacy?.entities?.media?.filter(
-                        (media) => media.type === "video"
+                        (media) => media.type === "video",
                     ) || [],
             }))
             .filter((tweet) => tweet.username !== agentUsername) // do not perform action on self-tweets
@@ -368,13 +368,13 @@ export class ClientBase extends EventEmitter {
         query: string,
         maxTweets: number,
         searchMode: SearchMode,
-        cursor?: string
+        cursor?: string,
     ): Promise<QueryTweetsResponse> {
         try {
             // Sometimes this fails because we are rate limited. in this case, we just need to return an empty array
             // if we dont get a response in 5 seconds, something is wrong
             const timeoutPromise = new Promise((resolve) =>
-                setTimeout(() => resolve({ tweets: [] }), 15000)
+                setTimeout(() => resolve({ tweets: [] }), 15000),
             );
 
             try {
@@ -385,10 +385,10 @@ export class ClientBase extends EventEmitter {
                                 query,
                                 maxTweets,
                                 searchMode,
-                                cursor
+                                cursor,
                             ),
                             timeoutPromise,
-                        ])
+                        ]),
                 );
                 return (result ?? { tweets: [] }) as QueryTweetsResponse;
             } catch (error) {
@@ -415,8 +415,8 @@ export class ClientBase extends EventEmitter {
                 await this.runtime.messageManager.getMemoriesByRoomIds({
                     roomIds: cachedTimeline.map((tweet) =>
                         stringToUuid(
-                            tweet.conversationId + "-" + this.runtime.agentId
-                        )
+                            tweet.conversationId + "-" + this.runtime.agentId,
+                        ),
                     ),
                 });
 
@@ -424,14 +424,14 @@ export class ClientBase extends EventEmitter {
 
             // Create a Set to store the IDs of existing memories
             const existingMemoryIds = new Set(
-                existingMemories.map((memory) => memory.id.toString())
+                existingMemories.map((memory) => memory.id.toString()),
             );
 
             // Check if any of the cached tweets exist in the existing memories
             const someCachedTweetsExist = cachedTimeline.some((tweet) =>
                 existingMemoryIds.has(
-                    stringToUuid(tweet.id + "-" + this.runtime.agentId)
-                )
+                    stringToUuid(tweet.id + "-" + this.runtime.agentId),
+                ),
             );
 
             if (someCachedTweetsExist) {
@@ -439,8 +439,8 @@ export class ClientBase extends EventEmitter {
                 const tweetsToSave = cachedTimeline.filter(
                     (tweet) =>
                         !existingMemoryIds.has(
-                            stringToUuid(tweet.id + "-" + this.runtime.agentId)
-                        )
+                            stringToUuid(tweet.id + "-" + this.runtime.agentId),
+                        ),
                 );
 
                 console.log({
@@ -454,7 +454,7 @@ export class ClientBase extends EventEmitter {
                     elizaLogger.log("Saving Tweet", tweet.id);
 
                     const roomId = stringToUuid(
-                        tweet.conversationId + "-" + this.runtime.agentId
+                        tweet.conversationId + "-" + this.runtime.agentId,
                     );
 
                     const userId =
@@ -468,7 +468,7 @@ export class ClientBase extends EventEmitter {
                             roomId,
                             this.profile.username,
                             this.profile.screenName,
-                            "twitter"
+                            "twitter",
                         );
                     } else {
                         await this.runtime.ensureConnection(
@@ -476,7 +476,7 @@ export class ClientBase extends EventEmitter {
                             roomId,
                             tweet.username,
                             tweet.name,
-                            "twitter"
+                            "twitter",
                         );
                     }
 
@@ -488,7 +488,7 @@ export class ClientBase extends EventEmitter {
                             ? stringToUuid(
                                   tweet.inReplyToStatusId +
                                       "-" +
-                                      this.runtime.agentId
+                                      this.runtime.agentId,
                               )
                             : undefined,
                     } as Content;
@@ -498,12 +498,12 @@ export class ClientBase extends EventEmitter {
                     // check if it already exists
                     const memory =
                         await this.runtime.messageManager.getMemoryById(
-                            stringToUuid(tweet.id + "-" + this.runtime.agentId)
+                            stringToUuid(tweet.id + "-" + this.runtime.agentId),
                         );
 
                     if (memory) {
                         elizaLogger.log(
-                            "Memory already exists, skipping timeline population"
+                            "Memory already exists, skipping timeline population",
                         );
                         break;
                     }
@@ -522,7 +522,7 @@ export class ClientBase extends EventEmitter {
                 }
 
                 elizaLogger.log(
-                    `Populated ${tweetsToSave.length} missing tweets from the cache.`
+                    `Populated ${tweetsToSave.length} missing tweets from the cache.`,
                 );
                 return;
             }
@@ -535,7 +535,7 @@ export class ClientBase extends EventEmitter {
         const mentionsAndInteractions = await this.fetchSearchTweets(
             `@${username}`,
             20,
-            SearchMode.Latest
+            SearchMode.Latest,
         );
 
         // Combine the timeline tweets and mentions/interactions
@@ -549,7 +549,7 @@ export class ClientBase extends EventEmitter {
         for (const tweet of allTweets) {
             tweetIdsToCheck.add(tweet.id);
             roomIds.add(
-                stringToUuid(tweet.conversationId + "-" + this.runtime.agentId)
+                stringToUuid(tweet.conversationId + "-" + this.runtime.agentId),
             );
         }
 
@@ -561,15 +561,15 @@ export class ClientBase extends EventEmitter {
 
         // Create a Set to store the existing memory IDs
         const existingMemoryIds = new Set<UUID>(
-            existingMemories.map((memory) => memory.id)
+            existingMemories.map((memory) => memory.id),
         );
 
         // Filter out the tweets that already exist in the database
         const tweetsToSave = allTweets.filter(
             (tweet) =>
                 !existingMemoryIds.has(
-                    stringToUuid(tweet.id + "-" + this.runtime.agentId)
-                )
+                    stringToUuid(tweet.id + "-" + this.runtime.agentId),
+                ),
         );
 
         elizaLogger.debug({
@@ -580,7 +580,7 @@ export class ClientBase extends EventEmitter {
             this.runtime.agentId,
             this.profile.username,
             this.runtime.character.name,
-            "twitter"
+            "twitter",
         );
 
         // Save the new tweets as memories
@@ -588,7 +588,7 @@ export class ClientBase extends EventEmitter {
             elizaLogger.log("Saving Tweet", tweet.id);
 
             const roomId = stringToUuid(
-                tweet.conversationId + "-" + this.runtime.agentId
+                tweet.conversationId + "-" + this.runtime.agentId,
             );
             const userId =
                 tweet.userId === this.profile.id
@@ -601,7 +601,7 @@ export class ClientBase extends EventEmitter {
                     roomId,
                     this.profile.username,
                     this.profile.screenName,
-                    "twitter"
+                    "twitter",
                 );
             } else {
                 await this.runtime.ensureConnection(
@@ -609,7 +609,7 @@ export class ClientBase extends EventEmitter {
                     roomId,
                     tweet.username,
                     tweet.name,
-                    "twitter"
+                    "twitter",
                 );
             }
 
@@ -647,7 +647,7 @@ export class ClientBase extends EventEmitter {
                     cookie.secure ? "Secure" : ""
                 }; ${cookie.httpOnly ? "HttpOnly" : ""}; SameSite=${
                     cookie.sameSite || "Lax"
-                }`
+                }`,
         );
         await this.twitterClient.setCookies(cookieStrings);
     }
@@ -659,7 +659,7 @@ export class ClientBase extends EventEmitter {
                     roomId: message.roomId,
                     count: 1,
                     unique: false,
-                }
+                },
             );
 
             if (
@@ -684,7 +684,7 @@ export class ClientBase extends EventEmitter {
     async loadLatestCheckedTweetId(): Promise<void> {
         const latestCheckedTweetId =
             await this.runtime.cacheManager.get<string>(
-                `twitter/${this.profile.username}/latest_checked_tweet_id`
+                `twitter/${this.profile.username}/latest_checked_tweet_id`,
             );
 
         if (latestCheckedTweetId) {
@@ -696,14 +696,14 @@ export class ClientBase extends EventEmitter {
         if (this.lastCheckedTweetId) {
             await this.runtime.cacheManager.set(
                 `twitter/${this.profile.username}/latest_checked_tweet_id`,
-                this.lastCheckedTweetId.toString()
+                this.lastCheckedTweetId.toString(),
             );
         }
     }
 
     async getCachedTimeline(): Promise<Tweet[] | undefined> {
         return await this.runtime.cacheManager.get<Tweet[]>(
-            `twitter/${this.profile.username}/timeline`
+            `twitter/${this.profile.username}/timeline`,
         );
     }
 
@@ -711,7 +711,7 @@ export class ClientBase extends EventEmitter {
         await this.runtime.cacheManager.set(
             `twitter/${this.profile.username}/timeline`,
             timeline,
-            { expires: Date.now() + 10 * 1000 }
+            { expires: Date.now() + 10 * 1000 },
         );
     }
 
@@ -719,20 +719,20 @@ export class ClientBase extends EventEmitter {
         await this.runtime.cacheManager.set(
             `twitter/${this.profile.username}/mentions`,
             mentions,
-            { expires: Date.now() + 10 * 1000 }
+            { expires: Date.now() + 10 * 1000 },
         );
     }
 
     async getCachedCookies(username: string) {
         return await this.runtime.cacheManager.get<any[]>(
-            `twitter/${username}/cookies`
+            `twitter/${username}/cookies`,
         );
     }
 
     async cacheCookies(username: string, cookies: any[]) {
         await this.runtime.cacheManager.set(
             `twitter/${username}/cookies`,
-            cookies
+            cookies,
         );
     }
 
