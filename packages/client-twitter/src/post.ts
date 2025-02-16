@@ -51,10 +51,11 @@ Guidelines:
 2. Feel free to mention the scores in your response and the grades to justify your statements
 3. If comparing two tokens, highlight interesting contrasts
 4. Keep the tone professional but engaging
-5. Don't use hashtags
+5. Don't use hashtags expect for token tickers
 6. Don't ask questions
-7. Use the token ticker with a $ symbol. Example: $SOL
-8. Expect the token ticker with can be in CAPITAL LETTERS, the rest should be in lowercase
+7. Use the token ticker with a $ symbol. Example: $SOL $ETH $BONGO $DEGOD
+8. Use the token ticker with a # symbol ONLY if the ticker name is longer than 6 characters. Example: #PEANUT #RETARDIO #BITCOIN $FARTCOIN
+9. Expect the token ticker with can be in CAPITAL LETTERS, the rest should be in lowercase
 
 {{characterPostExamples}}
 
@@ -116,7 +117,7 @@ async function getRandomTopTokens(
             return selectedTokens
                 .map(
                     (token) =>
-                        `${token.info.name} ($${token.info.symbol}):\n` +
+                        `${token.info.name} (${token.info.symbol.length >= 6 ? "#" : "$"}${token.info.symbol}):\n` +
                         `Score: ${token.score.value}/100 (${token.score.title})\n` +
                         `Market Cap: $${token.info.marketCap.toLocaleString()}\n` +
                         `24h Change: ${token.info.h24Change}%\n` +

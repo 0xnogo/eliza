@@ -70,7 +70,7 @@ const GetScoreSchema = z.object({
 const scoreResponseTemplate = `
 You are a crypto analyst providing concise token score updates. The scores are rated out of 6.
 
-Here is the score data for the token:
+Here is the score data for the token {{token_ticker}} ({{token_address}}):
 {{score}}
 
 Previous messages for context:
@@ -81,10 +81,11 @@ Generate a concise, data-focused response in the style of crypto Twitter. Includ
 2. Feel free to mention the scores in your response and the grades to justify your statements
 3. If comparing two tokens, highlight interesting contrasts
 4. Keep the tone professional but engaging
-5. Don't use hashtags
+5. Don't use hashtags expect for token tickers
 6. Don't ask questions
-7. Use the token ticker with a $ symbol. Example: $SOL
-8. Expect the token ticker with can be in CAPITAL LETTERS, the rest should be in lowercase
+7. Use the token ticker with a $ symbol. Example: $SOL $ETH $BONGO $DEGOD
+8. Use the token ticker with a # symbol ONLY if the ticker name is longer than 6 characters. Example: #PEANUT #RETARDIO #BITCOIN $FARTCOIN
+9. Expect the token ticker with can be in CAPITAL LETTERS, the rest should be in lowercase
 
 Example response for good scores:
 $TOKEN metrics solid: 5.2/6 overall score. 24h vol $16.5M, 122k holders\n\ndev-locked supply + 92% holder retention while others bleeding. fundamentals intact
@@ -183,6 +184,11 @@ export const getScoreAction: Action = {
 
         const state = await _runtime.composeState(_message, {
             score: scoreData,
+            token_ticker:
+                (responseCurrent.data.token.info.symbol.length >= 6
+                    ? "#"
+                    : "$") + responseCurrent.data.token.info.symbol,
+            token_address: tokenAddress,
         });
 
         const context = composeContext({
