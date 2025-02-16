@@ -92,10 +92,14 @@ Generate a concise, data-focused response in the style of crypto Twitter. Includ
 8. Expect the token ticker with can be in CAPITAL LETTERS, the rest should be in lowercase
 
 Example response for good scores:
-$/#TOKEN metrics solid: 5.2/6 overall score. 24h vol $16.5M, 122k holders\\n\\ndev-locked supply + 92% holder retention while others bleeding. fundamentals intact
+$/#TOKEN metrics solid: 5.2/6 overall score. 24h vol $16.5M, 122k holders
+
+dev-locked supply + 92% holder retention while others bleeding. fundamentals intact
 
 Example response for poor scores:
-$/#TOKEN metrics concerning: 2.1/6 score. vol down 65%, holders -12k\\n\\nweak distribution pattern + low social engagement. exercise caution
+$/#TOKEN metrics concerning: 2.1/6 score. vol down 65%, holders -12k
+
+weak distribution pattern + low social engagement. exercise caution
 
 Write a concise tweet from a market analyst perspective about the token. Use the ticker in your reponse and not the token address. Focus on performance, trust, or market position.
 Your response should not contain any questions. Brief, concise statements only. The total character count MUST be less than {{maxTweetLength}}. No emojis. Use \\n\\n (double spaces) between statements if there are multiple statements in your response.`;
