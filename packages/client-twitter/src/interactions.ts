@@ -483,12 +483,14 @@ export class TwitterInteractionClient {
 
         response.text = removeQuotes(response.text);
 
-        if (response.text) {
+        // Add check for GET_SCORE action before sending response
+        if (response.text && !response.action?.includes("GET_SCORE")) {
             if (this.isDryRun) {
                 elizaLogger.info(
                     `Dry run: Selected Post: ${tweet.id} - ${tweet.username}: ${tweet.text}\nAgent's Output:\n${response.text}`,
                 );
             } else {
+                elizaLogger.log("Sending response tweet as not GET_SCORE");
                 try {
                     const callback: HandlerCallback = async (
                         response: Content,
@@ -540,6 +542,45 @@ export class TwitterInteractionClient {
                 } catch (error) {
                     elizaLogger.error(`Error sending response tweet: ${error}`);
                 }
+            }
+        } else if (response.action?.includes("GET_SCORE")) {
+            // If it's a GET_SCORE action, skip the initial response and only process the action
+            try {
+                elizaLogger.log(
+                    "Processing GET_SCORE action without initial response",
+                );
+                await this.runtime.processActions(
+                    message,
+                    [
+                        {
+                            // Create minimal response message for action processing
+                            id: stringToUuid(Date.now().toString()),
+                            agentId: this.runtime.agentId,
+                            content: {
+                                text: "",
+                                action: response.action,
+                            },
+                            roomId: message.roomId,
+                            userId: message.userId,
+                            createdAt: Date.now(),
+                        },
+                    ],
+                    state,
+                    async (actionResponse: Content) => {
+                        const memories = await sendTweet(
+                            this.client,
+                            actionResponse,
+                            message.roomId,
+                            this.client.twitterConfig.TWITTER_USERNAME,
+                            tweet.id,
+                        );
+                        return memories;
+                    },
+                );
+            } catch (error) {
+                elizaLogger.error(
+                    `Error processing GET_SCORE action: ${error}`,
+                );
             }
         }
     }
